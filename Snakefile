@@ -45,6 +45,7 @@ rule clean:
         """
         rm -rf data/fastq_trimmed
         rm -rf data/assembly
+        rm -rf data/univec
         """
 
 
@@ -54,11 +55,17 @@ rule create_univec:
     If not present, download the latest version of UniVec
     """
     output:
-        "data/univec/univec.fasta"
+        fasta = "data/univec/univec.fasta",
+        nhr   = "data/univec/univec.fasta.nhr",
+        nin   = "data/univec/univec.fasta.nin",
+        nsq   = "data/univec/univec.fasta.nsq",
     shell:
         """
         mkdir -p data/univec
-        wget -O {output} ftp://ftp.ncbi.nlm.nih.gov/pub/UniVec/UniVec
+        wget -O {output.fasta} ftp://ftp.ncbi.nlm.nih.gov/pub/UniVec/UniVec
+        makeblastdb                 \
+            -in     {output.fasta}  \
+            -dbtype nucl
         """
 
 
@@ -200,7 +207,10 @@ rule seqclean:
     """
     input:
         fastq  = "data/fastq_trimmed/{sample}_{end}.trimmed1.fastq.gz",
-        univec = "data/univec/univec.fasta"
+        univec = "data/univec/univec.fasta",
+        nhr    = "data/univec/univec.fasta.nhr",
+        nin    = "data/univec/univec.fasta.nin",
+        nsq    = "data/univec/univec.fasta.nsq"
     output:
         "data/fastq_trimmed/{sample}_{end}.trimmed2.fastq.gz"
     log:
