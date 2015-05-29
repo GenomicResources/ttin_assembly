@@ -1,3 +1,4 @@
+shell.prefix("set -euo pipefail;")  
 # NOTE: seqclean is a pain in the ass when working with it. The easiest solution
 # is to download it, use ldd to know which are the missing libraries to execute
 # all the components, and add all the binaries and scripts to the path
@@ -22,8 +23,6 @@ ADAPTORS = "./src/trimmomatic-0.33/adapters/TruSeq3-PE-2.fa"
 
 # Path to programs (or element on path)
 trinity     = "./src/trinityrnaseq-2.0.6/Trinity"
-seqclean    = "seqclean"
-cln2qual    = "cln2qual"
 trimmomatic = "java -jar ./src/Trimmomatic-0.33/trimmomatic-0.33.jar "
 
 rule all:
@@ -227,8 +226,16 @@ rule seqclean:
         python scripts/fastq_to_qual.py  > {params.qual_pre}  &
         wait
         
+        # Check if fasta file is empty (and therefore the )
+        if [ ! -s {params.fasta_pre} ] ; then
+            rm  {params.fasta_pre}   \
+                {params.qual_pre}
+            touch {output}
+            exit 0
+        fi
+            
         # Trim with seqcelan
-        {seqclean}                  \
+        seqclean                    \
             {params.fasta_pre}      \
             -c 16                   \
             -o {params.fasta_post}  \
@@ -247,7 +254,7 @@ rule seqclean:
             formatdb.log
         
         # Generate the new qual file and rename the output
-        {cln2qual} {params.clean} {params.qual_pre}
+        cln2qual {params.clean} {params.qual_pre}
         mv {params.qual_pre}.clean {params.qual_post}
         
         # Generate the new fastq file
