@@ -1,0 +1,4 @@
+.snakemake
+data/assembly
+data/fastq_trimmed
+data/univec
